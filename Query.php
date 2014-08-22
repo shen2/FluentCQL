@@ -53,6 +53,16 @@ class Query{
     
     	return $this;
     }
+    
+    /**
+     * 
+     * @param \Cassandra\Database $database
+     * @return self
+     */
+    public function setDatabase($database){
+    	$this->_database = $database;
+    	return $this;
+    }
 
     /**
      * Executes the current select object and returns the result
@@ -60,7 +70,7 @@ class Query{
      * @param  int  $consistency
      * @return array|null
      */
-    public function query($consistency = \Cassandra\ConsistencyEnum::CONSISTENCY_QUORUM){
+    public function query($consistency = 2){
         $database = $this->_database ?: static::getDefaultDatabase();
         
         return $database->query($this->assemble(), $this->_bind, $consistency);
@@ -180,6 +190,14 @@ class Query{
     public function __call($name, array $arguments){
     	$command = \strtoupper(\implode(' ', preg_split('/([[:upper:]][[:lower:]]+)/', $name, null, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY)));
     	return $this->_appendClause($command, $arguments);
+    }
+    
+    public function clause(){
+    	return $this->_appendClause('', func_get_args());
+    }
+    
+    public function andClause(){
+    	return $this->_appendClause('AND', func_get_args());
     }
     
     public function set(){
