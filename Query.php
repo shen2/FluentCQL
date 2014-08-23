@@ -108,12 +108,13 @@ class Query{
      * @param array $args
      * @return self
      */
-    public function _appendClause($command, array $args){
-    	if (empty($args)){
+    public function _appendClause($command, array $args = array()){
+    	if (!empty($command)){
     		$this->_segments[] = $command;
     	}
-    	else{
-    		$this->_segments[] = $command . ' ' . array_shift($args);
+    	
+    	if (!empty($args)){
+    		$this->_segments[] = array_shift($args);
     		
     		foreach($args as $arg)
     			$this->_bind[] = $arg;

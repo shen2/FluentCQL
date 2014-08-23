@@ -23,6 +23,14 @@ abstract class Model extends \ArrayObject
 	
 	/**
 	 * 
+	 * @param \Cassandra\Database $db
+	 */
+	public static function setDefaultDb(\Cassandra\Database $db){
+		self::$_db = $db;
+	}
+	
+	/**
+	 * 
 	 */
 	public static function find(){
 		$args = func_get_args();
@@ -53,7 +61,7 @@ abstract class Model extends \ArrayObject
 		$rowset = new \SplFixedArray(count($rows));
 		
 		foreach($rows as $index => $row)
-			$rowset[$index] = new self($row);
+			$rowset[$index] = new static($row);
 		
 		return $rowset;
 	} 
@@ -71,28 +79,33 @@ abstract class Model extends \ArrayObject
 	 * 
 	 * @return Insert
 	 */
-	public static function insert($data){
-		$query = Query::insertInto(static::$_name);
+	public static function insertRow($data){
+		$query = Query::insertInto(static::$_name)
+			->clause('(' . \implode(', ', \array_keys($data)) . ')')
+			->values('(' . \implode(', ', \array_fill(0, count($data), '?')) . ')')
+			->bind(\array_values($data));
+		
+		return $query;
+	}
+	
+	public static function insert(){
+		return Query::insertInto(static::$_name);
 	}
 	
 	/**
 	 * 
 	 * @return Update
 	 */
-	public static function update(){
-		$query = new Update(static::$_name);
-		 
-		return $query;
+	public static function update($data, $where){
+		return Query::update(static::$_name);
 	}
 	
 	/**
 	 * 
 	 * @return Delete
 	 */
-	public static function delete(){
-		$query = new Delete(static::$_name);
-			
-		return $query;
+	public static function delete($where){
+		return Query::delete(static::$_name);
 	}
 	
 	protected $_cleanData = array();
@@ -169,6 +182,7 @@ abstract class Model extends \ArrayObject
 				$bind[] = $value;
 			}
 			
+			$conditions = array();
 			foreach(static::$_primary as $key){
 				$conditions[] = $key . ' = ?';
 				$bind[] = $this[$key];
@@ -179,8 +193,7 @@ abstract class Model extends \ArrayObject
 				->where(implode(' AND ', $conditions))
 				->bind($bind);
 		}
-		var_dump($query->assemble());
-		var_dump($query->getBind());
+		
 		static::$_db->query($query->assemble(), $query->getBind());
 		
 		return $this;
