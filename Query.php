@@ -197,6 +197,14 @@ class Query{
     	return $this->_appendClause('', func_get_args());
     }
     
+    public function from(){
+    	return $this->_appendClause('FROM', func_get_args());
+    }
+    
+    public function where(){
+    	return $this->_appendClause('WHERE', func_get_args());
+    }
+    
     public function andClause(){
     	return $this->_appendClause('AND', func_get_args());
     }

@@ -1,7 +1,7 @@
 <?php 
 namespace FluentCQL;
 
-abstract class Model extends \ArrayObject
+abstract class Table extends \ArrayObject
 {
 	/**
 	 * Adapter object.
@@ -48,6 +48,7 @@ abstract class Model extends \ArrayObject
 		
 		$rows = $query->where(implode(' AND ', $conditions))
 			->bind($args)
+			->setDatabase(static::$_db)
 			->query();
 		
 		return static::_convertToObjects($rows);
