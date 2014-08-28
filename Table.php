@@ -73,7 +73,8 @@ abstract class Table extends \ArrayObject
 	 */
 	public static function select($cols = null){
 		return Query::select($cols ?: '*')
-			->from(static::$_name);
+			->from(static::$_name)
+			->setDatabase(static::$_db);
 	}
 	
 	/**
@@ -84,13 +85,15 @@ abstract class Table extends \ArrayObject
 		$query = Query::insertInto(static::$_name)
 			->clause('(' . \implode(', ', \array_keys($data)) . ')')
 			->values('(' . \implode(', ', \array_fill(0, count($data), '?')) . ')')
-			->bind(\array_values($data));
+			->bind(\array_values($data))
+			->setDatabase(static::$_db);
 		
 		return $query;
 	}
 	
 	public static function insert(){
-		return Query::insertInto(static::$_name);
+		return Query::insertInto(static::$_name)
+			->setDatabase(static::$_db);
 	}
 	
 	/**
@@ -98,15 +101,18 @@ abstract class Table extends \ArrayObject
 	 * @return Update
 	 */
 	public static function update($data, $where){
-		return Query::update(static::$_name);
+		return Query::update(static::$_name)
+			->setDatabase(static::$_db);
 	}
 	
 	/**
 	 * 
 	 * @return Delete
 	 */
-	public static function delete($where){
-		return Query::delete(static::$_name);
+	public static function delete(){
+		return Query::delete()
+			->from(static::$_name)
+			->setDatabase(static::$_db);
 	}
 	
 	protected $_cleanData = array();
