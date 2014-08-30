@@ -68,18 +68,15 @@ class Query{
 	 * Executes the current select object and returns the result
 	 *
 	 * @param  int  $consistency
-	 * @return array|null
+	 * @param  int  $serialConsistency
+	 * @return \Cassandra\Response
 	 */
-	public function query($consistency = 2){
+	public function exec($consistency = null, $serialConsistency = null){
 		$database = $this->_database ?: static::getDefaultDatabase();
 		
-		return $database->query($this->assemble(), $this->_bind, $consistency);
+		return $database->exec($this->assemble(), $this->_bind, $consistency, $serialConsistency);
 	}
 	
-	public function fetch(){
-		$database = $this->_database ?: static::getDefaultDatabase();
-	}
-
 	/**
 	 * Converts this object to an CQL string.
 	 *
