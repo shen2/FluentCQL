@@ -28,6 +28,10 @@ abstract class Table extends \ArrayObject
 	public static function setDefaultDb(\Cassandra\Database $db){
 		self::$_db = $db;
 	}
+
+    public static function getDefaultDb(){
+        return self::$_db;
+    }
 	
 	/**
 	 * 

@@ -64,6 +64,7 @@ class Query{
 		return $this;
 	}
 
+
 	/**
 	 * Executes the current select object and returns the result
 	 *
@@ -72,8 +73,9 @@ class Query{
 	 * @return \Cassandra\Response
 	 */
 	public function exec($consistency = null, $serialConsistency = null){
-		$database = $this->_database ?: static::getDefaultDatabase();
-		
+
+		$database = $this->_database ?: Table::getDefaultDb();
+		echo($database===$this);
 		return $database->exec($this->assemble(), $this->_bind, $consistency, $serialConsistency);
 	}
 	
