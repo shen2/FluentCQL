@@ -80,7 +80,7 @@ abstract class Table extends \ArrayObject
 		
 		$rows = $query->where(implode(' AND ', $conditions))
 			->bind($args)
-			->setAdapter(static::$_dbAdapter)
+			->setDbAdapter(static::$_dbAdapter)
 			->querySync();
 		
 		return static::_convertToObjects($rows);
@@ -106,7 +106,7 @@ abstract class Table extends \ArrayObject
 	public static function select($cols = null){
 		return Query::select($cols ?: '*')
 			->from(static::$_name)
-			->setAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter);
 	}
 	
 	/**
@@ -118,14 +118,14 @@ abstract class Table extends \ArrayObject
 			->clause('(' . \implode(', ', \array_keys($data)) . ')')
 			->values('(' . \implode(', ', \array_fill(0, count($data), '?')) . ')')
 			->bind(\array_values($data))
-			->setAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter);
 		
 		return $query;
 	}
 	
 	public static function insert(){
 		return Query::insertInto(static::$_name)
-			->setAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter);
 	}
 	
 	/**
@@ -134,7 +134,7 @@ abstract class Table extends \ArrayObject
 	 */
 	public static function update($data, $where){
 		return Query::update(static::$_name)
-			->setAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter);
 	}
 	
 	/**
@@ -144,7 +144,7 @@ abstract class Table extends \ArrayObject
 	public static function delete(){
 		return Query::delete()
 			->from(static::$_name)
-			->setAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter);
 	}
 	
 	protected $_cleanData = array();
