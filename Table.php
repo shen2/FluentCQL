@@ -6,9 +6,9 @@ abstract class Table extends \ArrayObject
 	/**
 	 * Adapter object.
 	 *
-	 * @var \Cassandra\Database
+	 * @var \Cassandra\Connection
 	 */
-	protected static $_db;
+	protected static $_dbAdapter;
 
 	/**
 	 * The keyspace name (default null means current keyspace)
@@ -17,20 +17,48 @@ abstract class Table extends \ArrayObject
 	 */
 	protected static $_keyspace;
 	
+	/**
+	 * 
+	 * @var string
+	 */
 	protected static $_name;
 	
+	/**
+	 * 
+	 * @var array
+	 */
 	protected static $_primary;
 	
 	/**
 	 * 
-	 * @param \Cassandra\Database $db
+	 * @param \Cassandra\Connection $adapter
 	 */
-	public static function setDefaultDb(\Cassandra\Database $db){
-		self::$_db = $db;
+	public static function setDefaultDbAdapter(\Cassandra\Connection $adapter){
+		self::$_dbAdapter = $adapter;
 	}
-
-    public static function getDefaultDb(){
-        return self::$_db;
+	
+	/**
+	 * 
+	 * @return \Cassandra\Connection
+	 */
+    public static function getDefaultDbAdapter(){
+        return self::$_dbAdapter;
+    }
+	
+	/**
+	 * 
+	 * @param \Cassandra\Connection $adapter
+	 */
+	public static function setDbAdapter(\Cassandra\Connection $adapter){
+		static::$_dbAdapter = $adapter;
+	}
+	
+	/**
+	 * 
+	 * @return \Cassandra\Connection
+	 */
+    public static function getDbAdapter(){
+        return static::$_dbAdapter;
     }
 	
 	/**
@@ -52,8 +80,8 @@ abstract class Table extends \ArrayObject
 		
 		$rows = $query->where(implode(' AND ', $conditions))
 			->bind($args)
-			->setDatabase(static::$_db)
-			->query();
+			->setAdapter(static::$_dbAdapter)
+			->querySync();
 		
 		return static::_convertToObjects($rows);
 	}
@@ -78,7 +106,7 @@ abstract class Table extends \ArrayObject
 	public static function select($cols = null){
 		return Query::select($cols ?: '*')
 			->from(static::$_name)
-			->setDatabase(static::$_db);
+			->setAdapter(static::$_dbAdapter);
 	}
 	
 	/**
@@ -90,14 +118,14 @@ abstract class Table extends \ArrayObject
 			->clause('(' . \implode(', ', \array_keys($data)) . ')')
 			->values('(' . \implode(', ', \array_fill(0, count($data), '?')) . ')')
 			->bind(\array_values($data))
-			->setDatabase(static::$_db);
+			->setAdapter(static::$_dbAdapter);
 		
 		return $query;
 	}
 	
 	public static function insert(){
 		return Query::insertInto(static::$_name)
-			->setDatabase(static::$_db);
+			->setAdapter(static::$_dbAdapter);
 	}
 	
 	/**
@@ -106,7 +134,7 @@ abstract class Table extends \ArrayObject
 	 */
 	public static function update($data, $where){
 		return Query::update(static::$_name)
-			->setDatabase(static::$_db);
+			->setAdapter(static::$_dbAdapter);
 	}
 	
 	/**
@@ -116,7 +144,7 @@ abstract class Table extends \ArrayObject
 	public static function delete(){
 		return Query::delete()
 			->from(static::$_name)
-			->setDatabase(static::$_db);
+			->setAdapter(static::$_dbAdapter);
 	}
 	
 	protected $_cleanData = array();
@@ -205,7 +233,7 @@ abstract class Table extends \ArrayObject
 				->bind($bind);
 		}
 		
-		static::$_db->query($query->assemble(), $query->getBind());
+		static::$_dbAdapter->querySync($query->assemble(), $query->getBind());
 		
 		return $this;
 	}
@@ -229,6 +257,6 @@ abstract class Table extends \ArrayObject
 		$query->where(implode(' AND ', $conditions))
 			->bind($bind);
 		
-		return static::$_db->query($query->assemble(), $query->getBind());
+		return static::$_dbAdapter->querySync($query->assemble(), $query->getBind());
 	}
 }

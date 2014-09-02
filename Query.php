@@ -5,9 +5,9 @@ class Query{
 
 	/**
 	 *
-	 * @var \Cassandra\Database
+	 * @var \Cassandra\Connection
 	 */
-	protected $_database;
+	protected $_dbAdapter;
 	
 	/**
 	 * Bind variables for query
@@ -25,10 +25,10 @@ class Query{
 	/**
 	 * Class constructor
 	 *
-	 * @param \Cassandra\Database $database
+	 * @param \Cassandra\Connection $adapter
 	 */
-	public function __construct($database = null){
-		$this->_database = $database;
+	public function __construct($adapter = null){
+		$this->_dbAdapter = $adapter;
 	}
 	
 	/**
@@ -45,7 +45,7 @@ class Query{
 	 * Set bind variables
 	 *
 	 * @param mixed $bind
-	 * @return Select
+	 * @return self
 	 */
 	public function bind($bind)
 	{
@@ -56,28 +56,40 @@ class Query{
 	
 	/**
 	 * 
-	 * @param \Cassandra\Database $database
+	 * @param \Cassandra\Connection $adapter
 	 * @return self
 	 */
-	public function setDatabase($database){
-		$this->_database = $database;
+	public function setDbAdapter($adapter){
+		$this->_dbAdapter = $adapter;
 		return $this;
 	}
 
 
 	/**
-	 * Executes the current select object and returns the result
+	 * Executes the current select object and returns the response
 	 *
 	 * @param  int  $consistency
-	 * @param  int  $serialConsistency
+	 * @param  array  $options
 	 * @return \Cassandra\Response
 	 */
-	public function exec($consistency = null, $serialConsistency = null){
-
-		$database = $this->_database ?: Table::getDefaultDb();
-		echo($database===$this);
-		return $database->exec($this->assemble(), $this->_bind, $consistency, $serialConsistency);
+	public function querySync($consistency = null, array $options = []){
+		$adapter = $this->_dbAdapter ?: Table::getDefaultDbAdapter();
+		
+		return $adapter->querySync($this->assemble(), $this->_bind, $consistency, $options);
 	}
+	
+	/**
+	 * 
+	 * @param int $consistency
+	 * @param array $options
+	 * @return \Cassandra\Statement
+	 */
+	public function queryAsync($consistency = null, array $options = []){
+		$adapter = $this->_dbAdapter ?: Table::getDefaultDbAdapter();
+	
+		return $adapter->queryAsync($this->assemble(), $this->_bind, $consistency, $options);
+	}
+	
 	
 	/**
 	 * Converts this object to an CQL string.
