@@ -1,5 +1,6 @@
 <?php 
 namespace FluentCQL;
+use Cassandra\Type;
 
 abstract class Table extends \ArrayObject
 {
@@ -21,13 +22,18 @@ abstract class Table extends \ArrayObject
 	 * 
 	 * @var string
 	 */
-	protected static $_name;
+	abstract protected static $_name;
 	
 	/**
 	 * 
 	 * @var array
 	 */
-	protected static $_primary;
+	abstract protected static $_primary;
+	
+	/**
+	 * @var array
+	 */
+	abstract protected static $_columns;
 	
 	/**
 	 * 
@@ -78,26 +84,19 @@ abstract class Table extends \ArrayObject
 			$conditions[] = static::$_primary[$index] . ' = ?'; 
 		}
 		
-		$rows = $query->where(implode(' AND ', $conditions))
-			->bind($args)
+		$bind = array();
+		foreach($args as $index => $arg){
+			$type = static::$_columns[static::$_primary[$index]];
+			$bind[] = Type\Base::getTypeObject($type, $arg);
+		}
+		
+		$response = $query->where(implode(' AND ', $conditions))
+			->bind($bind)
 			->setDbAdapter(static::$_dbAdapter)
 			->querySync();
 		
-		return static::_convertToObjects($rows);
+		return $response;
 	}
-	
-	/**
-	 * 
-	 * @param mixed $rows
-	 */
-	protected static function _convertToObjects($rows){
-		$rowset = new \SplFixedArray(count($rows));
-		
-		foreach($rows as $index => $row)
-			$rowset[$index] = new static($row);
-		
-		return $rowset;
-	} 
 	
 	/**
 	 * 
@@ -114,10 +113,14 @@ abstract class Table extends \ArrayObject
 	 * @return Insert
 	 */
 	public static function insertRow($data){
+		$bind = array();
+		foreach($data as $key => $value)
+			$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $value);
+		
 		$query = Query::insertInto(static::$_name)
 			->clause('(' . \implode(', ', \array_keys($data)) . ')')
 			->values('(' . \implode(', ', \array_fill(0, count($data), '?')) . ')')
-			->bind(\array_values($data))
+			->bind($bind)
 			->setDbAdapter(static::$_dbAdapter);
 		
 		return $query;
@@ -208,23 +211,27 @@ abstract class Table extends \ArrayObject
 		$bind = array();
 		if (empty($this->_cleanData)) {
 			$data = $this->getArrayCopy();
+			$bind = array();
+			foreach($data as $key => $value)
+				$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $value);
+			
 			$query = Query::insertInto(static::$_name)
 				->clause('(' . \implode(', ', \array_keys($data)) . ')')
 				->values('(' . \implode(', ', \array_fill(0, count($data), '?')) . ')')
-				->bind(\array_values($data));
+				->bind($bind);
 		}
 		else{
 			$assignments = array();
 			
 			foreach($this->_modifiedData as $key => $value){
 				$assignments[] = $key . ' = ?';
-				$bind[] = $value;
+				$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $value);
 			}
 			
 			$conditions = array();
 			foreach(static::$_primary as $key){
 				$conditions[] = $key . ' = ?';
-				$bind[] = $this[$key];
+				$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $this[$key]);
 			}
 			
 			$query = Query::update(static::$_name)
@@ -251,7 +258,7 @@ abstract class Table extends \ArrayObject
 		
 		foreach(static::$_primary as $key){
 			$conditions[] = $key . ' = ?';
-			$bind[] = $this[$key];
+			$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $this[$key]);
 		}
 		
 		$query->where(implode(' AND ', $conditions))

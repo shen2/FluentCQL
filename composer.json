@@ -1,0 +1,19 @@
+{
+	"name": "shen2/fluent-cql",
+	"description": "an php CQL building library",
+	"minimum-stability": "stable",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Shen Zhenyu",
+			"email": "zhenyupku@gmail.com"
+		}
+	],
+	"require": {
+		"php": ">=5.4.0",
+        "duoshuo/php-cassandra": "dev-master"
+	},
+	"autoload": {
+		"psr-4": { "FluentCQL\\": "src/" }
+	}
+}
