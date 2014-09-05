@@ -17,15 +17,22 @@ class TimeUUID {
 		return $number & ((1 << (64 - $amount)) - 1);
 	}
 
-	protected static function _createTimeHex($timestamp)
+	/**
+	 * 
+	 * @param int $sec
+	 * @param double $msec
+	 * @return string
+	 */
+	protected static function _createTimeHex($sec = null, $msec = 0)
 	{
-		if (isset($timestamp)) {
-			$nanos = $timestamp * 10000000;
+		if (isset($sec)) {
+			$nanos = (int)$sec * 10000000 + (int)($msec * 10000000);
 		}
 		else {
-			$timeArray = explode(' ', microtime());
-			$nanos = (int)($timeArray[1] . substr($timeArray[0], 2, -1));
+			list($msec, $sec) = explode(' ', microtime());
+			$nanos = (int)($sec . substr($msec, 2, 7));
 		}
+		
 		$nanosSince = $nanos - self::$_startEpoch;
 
 		$msb = 0;
@@ -63,8 +70,8 @@ class TimeUUID {
 		return substr($hex, 0, 4) . '-' . substr($hex, 4);
 	}
 
-	public static function getTimeUUID($ip, $timestamp = null)
+	public static function getTimeUUID($ip, $sec = null, $msec = 0)
 	{
-		return self::_createTimeHex($timestamp) . '-' . self::_makeClockSeqAndNode($ip);
+		return self::_createTimeHex($sec, $msec) . '-' . self::_makeClockSeqAndNode($ip);
 	}
 }

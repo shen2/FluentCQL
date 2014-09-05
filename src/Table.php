@@ -22,18 +22,18 @@ abstract class Table extends \ArrayObject
 	 * 
 	 * @var string
 	 */
-	abstract protected static $_name;
+	protected static $_name;
 	
 	/**
 	 * 
 	 * @var array
 	 */
-	abstract protected static $_primary;
+	protected static $_primary;
 	
 	/**
 	 * @var array
 	 */
-	abstract protected static $_columns;
+	protected static $_columns;
 	
 	/**
 	 * 
@@ -93,7 +93,8 @@ abstract class Table extends \ArrayObject
 		$response = $query->where(implode(' AND ', $conditions))
 			->bind($bind)
 			->setDbAdapter(static::$_dbAdapter)
-			->querySync();
+			->querySync()
+			->setRowClass(get_called_class());
 		
 		return $response;
 	}
