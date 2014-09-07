@@ -14,7 +14,7 @@ abstract class Table extends \ArrayObject
 	/**
 	 * The keyspace name (default null means current keyspace)
 	 *
-	 * @var array
+	 * @var string
 	 */
 	protected static $_keyspace;
 	
@@ -69,22 +69,23 @@ abstract class Table extends \ArrayObject
 	
 	/**
 	 * 
+	 * @return \Cassandra\Response\Response
 	 */
 	public static function find(){
 		$args = func_get_args();
 		$keyNames = array_values(static::$_primary);
 		
-		$whereList = array();
+		$whereList = [];
 		
 		$query = Query::select('*')
 			->from(static::$_name);
 		
-		$conditions = array();
+		$conditions = [];
 		foreach($args as $index => $arg){
 			$conditions[] = static::$_primary[$index] . ' = ?'; 
 		}
 		
-		$bind = array();
+		$bind = [];
 		foreach($args as $index => $arg){
 			$type = static::$_columns[static::$_primary[$index]];
 			$bind[] = Type\Base::getTypeObject($type, $arg);
@@ -101,7 +102,7 @@ abstract class Table extends \ArrayObject
 	
 	/**
 	 * 
-	 * @return Select
+	 * @return Query
 	 */
 	public static function select($cols = null){
 		return Query::select($cols ?: '*')
@@ -111,10 +112,10 @@ abstract class Table extends \ArrayObject
 	
 	/**
 	 * 
-	 * @return Insert
+	 * @return Query
 	 */
 	public static function insertRow($data){
-		$bind = array();
+		$bind = [];
 		foreach($data as $key => $value)
 			$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $value);
 		
@@ -134,7 +135,7 @@ abstract class Table extends \ArrayObject
 	
 	/**
 	 * 
-	 * @return Update
+	 * @return Query
 	 */
 	public static function update($data, $where){
 		return Query::update(static::$_name)
@@ -143,7 +144,7 @@ abstract class Table extends \ArrayObject
 	
 	/**
 	 * 
-	 * @return Delete
+	 * @return Query
 	 */
 	public static function delete(){
 		return Query::delete()
@@ -151,7 +152,11 @@ abstract class Table extends \ArrayObject
 			->setDbAdapter(static::$_dbAdapter);
 	}
 	
-	protected $_cleanData = array();
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_cleanData = [];
 	
 	/**
 	 * Tracks columns where data has been updated. Allows more specific insert and
@@ -159,7 +164,7 @@ abstract class Table extends \ArrayObject
 	 *
 	 * @var array
 	 */
-	protected $_modifiedData = array();
+	protected $_modifiedData = [];
 	
 	/**
 	 * 构造函数
@@ -167,7 +172,7 @@ abstract class Table extends \ArrayObject
 	 * @param int $timestamp
 	 * @param int $ttl
 	 */
-	public function __construct($data = array(), $stored = null){
+	public function __construct($data = [], $stored = null){
 		parent::__construct($data);
 	
 		//$this->timestamp = $timestamp;
@@ -207,12 +212,16 @@ abstract class Table extends \ArrayObject
 		$this->_modifiedData[$columnName] = null;
 	}
 	
+	/**
+	 * 
+	 * @return self
+	 */
 	public function save()
 	{
-		$bind = array();
+		$bind = [];
 		if (empty($this->_cleanData)) {
 			$data = $this->getArrayCopy();
-			$bind = array();
+			$bind = [];
 			foreach($data as $key => $value)
 				$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $value);
 			
@@ -222,14 +231,14 @@ abstract class Table extends \ArrayObject
 				->bind($bind);
 		}
 		else{
-			$assignments = array();
+			$assignments = [];
 			
 			foreach($this->_modifiedData as $key => $value){
 				$assignments[] = $key . ' = ?';
 				$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $value);
 			}
 			
-			$conditions = array();
+			$conditions = [];
 			foreach(static::$_primary as $key){
 				$conditions[] = $key . ' = ?';
 				$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $this[$key]);
@@ -248,14 +257,14 @@ abstract class Table extends \ArrayObject
 	
 	/**
 	 * 删除一整行
-	 * @return Model
+	 * @return \Cassandra\Response\Response
 	 */
 	public function remove(){
 		$query = Query::delete()
 			->from(static::$_name);
 		
-		$conditions = array();
-		$bind = array();
+		$conditions = [];
+		$bind = [];
 		
 		foreach(static::$_primary as $key){
 			$conditions[] = $key . ' = ?';

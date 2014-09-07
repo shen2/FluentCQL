@@ -14,13 +14,13 @@ class Query{
 	 *
 	 * @var array
 	 */
-	protected $_bind = array();
+	protected $_bind = [];
 
 	/**
 	 *
 	 * @var array
 	 */
-	protected $_segments = array();
+	protected $_segments = [];
 
 	/**
 	 * Class constructor
@@ -123,7 +123,7 @@ class Query{
 	 * @param array $args
 	 * @return self
 	 */
-	public function _appendClause($command, array $args = array()){
+	public function _appendClause($command, array $args = []){
 		if (!empty($command)){
 			$this->_segments[] = $command;
 		}
