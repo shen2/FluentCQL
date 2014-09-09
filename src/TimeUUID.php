@@ -7,6 +7,15 @@ class TimeUUID {
 	// A grand day! 100's nanoseconds precision at 00:00:00.000 15 Oct 1582.
 	protected static $_startEpoch = -122192928000000000;
 
+	protected static $_mac;
+
+	protected static $_lsb;
+
+	public static function setMAC($mac)
+	{
+		self::$_mac = implode('', explode(':', $mac));
+	}
+
 	protected static function _unsignedRightShift($number, $amount)
 	{
 		if ($number >= 0)
@@ -45,33 +54,19 @@ class TimeUUID {
 		return substr($timeHex, 0, 8) . '-' . substr($timeHex, 8, 4) . '-' . substr($timeHex, 12, 4);
 	}
 
-	protected static function _makeNode($ip)
-	{
-		$node = 0;
-		$hash = md5($ip, true);
-		for ($i = 0; $i < 6; ++$i)
-		{
-			//left shift (5 - $i) octets
-			$node |= unpack('C', substr($hash, $i, 1))[1] << ((5 - $i) << 3);
-		}
-		// Since we don't use the mac address, the spec says that multicast
-		// bit (least significant bit of the first octet of the node ID) must be 1.
-		return $node | 0x0000010000000000;
-	}
-
-	protected static function _makeClockSeqAndNode($ip)
+	protected static function _makeClockSeq()
 	{
 		$lsb = 0;
-		$lsb |= 0x8000000000000000; // variant (2 bits)
-		$lsb |= mt_rand(0, (1 << 14) - 1) << 48; // clock sequence (14 bits)
-		$lsb |= self::_makeNode($ip);
+		$lsb |= 0x8000; // variant (2 bits)
+		$lsb |= mt_rand(0, (1 << 14) - 1); // clock sequence (14 bits)
 
-		$hex = dechex($lsb);
-		return substr($hex, 0, 4) . '-' . substr($hex, 4);
+		return dechex($lsb);
 	}
 
-	public static function getTimeUUID($ip, $sec = null, $msec = 0)
+	public static function getTimeUUID($sec = null, $msec = 0)
 	{
-		return self::_createTimeHex($sec, $msec) . '-' . self::_makeClockSeqAndNode($ip);
+		if (self::$_lsb === null)
+			self::$_lsb = self::_makeClockSeq();
+		return self::_createTimeHex($sec, $msec) . '-' . self::$_lsb . '-' . self::$_mac;
 	}
 }
