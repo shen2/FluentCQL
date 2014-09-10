@@ -11,6 +11,8 @@ class TimeUUID {
 
 	protected static $_lsb;
 
+	protected static $_lastNanos = 0;
+
 	public static function setMAC($mac)
 	{
 		self::$_mac = implode('', explode(':', $mac));
@@ -43,6 +45,11 @@ class TimeUUID {
 		}
 		
 		$nanosSince = $nanos - self::$_startEpoch;
+
+		if ($nanosSince > self::$_lastNanos)
+			self::$_lastNanos = $nanosSince;
+		else
+			$nanosSince = ++self::$_lastNanos;
 
 		$msb = 0;
 		$msb |= (0x00000000ffffffff & $nanosSince) << 32;
