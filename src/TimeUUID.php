@@ -108,9 +108,9 @@ class TimeUUID {
 				}
 
 				sem_release($semId);
-			}
 
-			self::$_clockSeq = shm_get_var($shmId, self::CLOCK_SEQ_KEY);
+				self::$_clockSeq = shm_get_var($shmId, self::CLOCK_SEQ_KEY);
+			}
 		}
 		return self::_createTimeHex($sec, $msec) . '-' . self::$_clockSeq . '-' . self::$_mac;
 	}
