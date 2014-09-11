@@ -4,11 +4,11 @@ namespace FluentCQL;
  * The goods are here: www.ietf.org/rfc/rfc4122.txt.
  */
 class TimeUUID {
-	const SEM_KEY = 1000;
-	const SHM_KEY = 2000;
+	protected static $_semKey = 1000;
+	protected static $_shmKey = 2000;
 
-	const CLOCK_SEQ_KEY = 1;
-	const LAST_NANOS_KEY = 2;
+	protected static $_clockSeqKey = 1;
+	protected static $_lastNanosKey = 2;
 
 	// A grand day! 100's nanoseconds precision at 00:00:00.000 15 Oct 1582.
 	protected static $_startEpoch = -122192928000000000;
@@ -20,6 +20,16 @@ class TimeUUID {
 	public static function setMAC($mac)
 	{
 		self::$_mac = implode('', explode(':', $mac));
+	}
+
+	public static function setSemKey($semKey)
+	{
+		self::$_semKey = $semKey;
+	}
+
+	public static function setShmKey($shmKey)
+	{
+		self::$_shmKey = $shmKey;
 	}
 
 	protected static function _unsignedRightShift($number, $amount)
@@ -44,11 +54,11 @@ class TimeUUID {
 
 		$nanosSince = $nanos - self::$_startEpoch;
 
-		$semId = sem_get(self::SEM_KEY);
+		$semId = sem_get(self::$_semKey);
 		sem_acquire($semId); //blocking
 
-		$shmId = shm_attach(self::SHM_KEY);
-		$lastNanos = shm_get_var($shmId, self::LAST_NANOS_KEY);
+		$shmId = shm_attach(self::$_shmKey);
+		$lastNanos = shm_get_var($shmId, self::$_lastNanosKey);
 		if ($lastNanos === false)
 			$lastNanos = 0;
 
@@ -57,7 +67,8 @@ class TimeUUID {
 		else
 			$nanosSince = ++$lastNanos;
 
-		shm_put_var($shmId, self::LAST_NANOS_KEY, $lastNanos);
+		shm_put_var($shmId, self::$_lastNanosKey, $lastNanos);
+		shm_detach($shmId);
 
 		sem_release($semId);
 
@@ -96,21 +107,24 @@ class TimeUUID {
 	public static function getTimeUUID($sec = null, $msec = 0)
 	{
 		if (self::$_clockSeq === null) {
-			$shmId = shm_attach(self::SHM_KEY);
-			self::$_clockSeq = shm_get_var($shmId, self::CLOCK_SEQ_KEY);
+			$shmId = shm_attach(self::$_shmKey);
+			self::$_clockSeq = shm_get_var($shmId, self::$_clockSeqKey);
 
 			if (self::$_clockSeq === false) {
-				$semId = sem_get(self::SEM_KEY);
+				$semId = sem_get(self::$_semKey);
 				sem_acquire($semId); //blocking
 
-				if (!shm_has_var($shmId, self::CLOCK_SEQ_KEY)) {
-					shm_put_var($shmId, self::CLOCK_SEQ_KEY, self::_makeClockSeq());
+				if (shm_has_var($shmId, self::$_clockSeqKey)) {
+					self::$_clockSeq = shm_get_var($shmId, self::$_clockSeqKey);
+				} else {
+					self::$_clockSeq = self::_makeClockSeq();
+					shm_put_var($shmId, self::$_clockSeqKey, self::$_clockSeq);
 				}
 
 				sem_release($semId);
-
-				self::$_clockSeq = shm_get_var($shmId, self::CLOCK_SEQ_KEY);
 			}
+
+			shm_detach($shmId);
 		}
 		return self::_createTimeHex($sec, $msec) . '-' . self::$_clockSeq . '-' . self::$_mac;
 	}
