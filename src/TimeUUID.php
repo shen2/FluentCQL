@@ -4,14 +4,18 @@ namespace FluentCQL;
  * The goods are here: www.ietf.org/rfc/rfc4122.txt.
  */
 class TimeUUID {
+	const SEM_KEY = 1000;
+	const SHM_KEY = 2000;
+
+	const CLOCK_SEQ_KEY = 1;
+	const LAST_NANOS_KEY = 2;
+
 	// A grand day! 100's nanoseconds precision at 00:00:00.000 15 Oct 1582.
 	protected static $_startEpoch = -122192928000000000;
 
 	protected static $_mac;
 
-	protected static $_lsb;
-
-	protected static $_lastNanos = 0;
+	protected static $_clockSeq;
 
 	public static function setMAC($mac)
 	{
@@ -28,13 +32,7 @@ class TimeUUID {
 		return $number & ((1 << (64 - $amount)) - 1);
 	}
 
-	/**
-	 * 
-	 * @param int $sec
-	 * @param double $msec
-	 * @return string
-	 */
-	protected static function _createTimeHex($sec = null, $msec = 0)
+	protected static function _getTimeSafe($sec = null, $msec = 0)
 	{
 		if (isset($sec)) {
 			$nanos = (int)$sec * 10000000 + (int)($msec * 10000000);
@@ -43,13 +41,38 @@ class TimeUUID {
 			list($msec, $sec) = explode(' ', microtime());
 			$nanos = (int)($sec . substr($msec, 2, 7));
 		}
-		
+
 		$nanosSince = $nanos - self::$_startEpoch;
 
-		if ($nanosSince > self::$_lastNanos)
-			self::$_lastNanos = $nanosSince;
+		$semId = sem_get(self::SEM_KEY);
+		sem_acquire($semId); //blocking
+
+		$shmId = shm_attach(self::SHM_KEY);
+		$lastNanos = shm_get_var($shmId, self::LAST_NANOS_KEY);
+		if ($lastNanos === false)
+			$lastNanos = 0;
+
+		if ($nanosSince > $lastNanos)
+			$lastNanos = $nanosSince;
 		else
-			$nanosSince = ++self::$_lastNanos;
+			$nanosSince = ++$lastNanos;
+
+		shm_put_var($shmId, self::LAST_NANOS_KEY, $lastNanos);
+
+		sem_release($semId);
+
+		return $nanosSince;
+	}
+
+	/**
+	 * 
+	 * @param int $sec
+	 * @param double $msec
+	 * @return string
+	 */
+	protected static function _createTimeHex($sec = null, $msec = 0)
+	{
+		$nanosSince = self::_getTimeSafe($sec, $msec);
 
 		$msb = 0;
 		$msb |= (0x00000000ffffffff & $nanosSince) << 32;
@@ -63,17 +86,32 @@ class TimeUUID {
 
 	protected static function _makeClockSeq()
 	{
-		$lsb = 0;
-		$lsb |= 0x8000; // variant (2 bits)
-		$lsb |= mt_rand(0, (1 << 14) - 1); // clock sequence (14 bits)
+		$clockSeq = 0;
+		$clockSeq |= 0x8000; // variant (2 bits)
+		$clockSeq |= mt_rand(0, (1 << 14) - 1); // clock sequence (14 bits)
 
-		return dechex($lsb);
+		return dechex($clockSeq);
 	}
 
 	public static function getTimeUUID($sec = null, $msec = 0)
 	{
-		if (self::$_lsb === null)
-			self::$_lsb = self::_makeClockSeq();
-		return self::_createTimeHex($sec, $msec) . '-' . self::$_lsb . '-' . self::$_mac;
+		if (self::$_clockSeq === null) {
+			$shmId = shm_attach(self::SHM_KEY);
+			self::$_clockSeq = shm_get_var($shmId, self::CLOCK_SEQ_KEY);
+
+			if (self::$_clockSeq === false) {
+				$semId = sem_get(self::SEM_KEY);
+				sem_acquire($semId); //blocking
+
+				if (!shm_has_var($shmId, self::CLOCK_SEQ_KEY)) {
+					shm_put_var($shmId, self::CLOCK_SEQ_KEY, self::_makeClockSeq());
+				}
+
+				sem_release($semId);
+			}
+
+			self::$_clockSeq = shm_get_var($shmId, self::CLOCK_SEQ_KEY);
+		}
+		return self::_createTimeHex($sec, $msec) . '-' . self::$_clockSeq . '-' . self::$_mac;
 	}
 }
