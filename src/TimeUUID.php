@@ -17,23 +17,19 @@ class TimeUUID {
 
 	protected static $_clockSeq;
 
-	public static function setMAC($mac)
-	{
+	public static function setMAC($mac) {
 		self::$_mac = implode('', explode(':', $mac));
 	}
 
-	public static function setSemKey($semKey)
-	{
+	public static function setSemKey($semKey) {
 		self::$_semKey = $semKey;
 	}
 
-	public static function setShmKey($shmKey)
-	{
+	public static function setShmKey($shmKey) {
 		self::$_shmKey = $shmKey;
 	}
 
-	protected static function _unsignedRightShift($number, $amount)
-	{
+	protected static function _unsignedRightShift($number, $amount) {
 		if ($number >= 0)
 			return $number >> $amount;
 		$number >>= $amount;
@@ -42,15 +38,14 @@ class TimeUUID {
 		return $number & ((1 << (64 - $amount)) - 1);
 	}
 
-	protected static function _getTimeSafe($sec = null, $msec = 0)
-	{
-		if (isset($sec)) {
-			$nanos = (int)$sec * 10000000 + (int)($msec * 10000000);
-		}
-		else {
-			list($msec, $sec) = explode(' ', microtime());
-			$nanos = (int)($sec . substr($msec, 2, 7));
-		}
+	protected static function _getTimeBefore($sec, $msec = null) {
+		$nanos = (int)$sec * 10000000 + (isset($msec) ? (int)($msec * 10000000) : mt_rand(0, 10000000 - 1));
+		return $nanos - self::$_startEpoch;
+	}
+
+	protected static function _getTimeNow() {
+		list($msec, $sec) = explode(' ', microtime());
+		$nanos = (int)($sec . substr($msec, 2, 7));
 
 		$nanosSince = $nanos - self::$_startEpoch;
 
@@ -81,9 +76,8 @@ class TimeUUID {
 	 * @param double $msec
 	 * @return string
 	 */
-	protected static function _createTimeHex($sec = null, $msec = 0)
-	{
-		$nanosSince = self::_getTimeSafe($sec, $msec);
+	protected static function _createTimeHex($sec = null, $msec = null) {
+		$nanosSince = isset($sec) ? self::_getTimeBefore($sec, $msec) : self::_getTimeNow();
 
 		$msb = 0;
 		$msb |= (0x00000000ffffffff & $nanosSince) << 32;
@@ -95,8 +89,7 @@ class TimeUUID {
 		return substr($timeHex, 0, 8) . '-' . substr($timeHex, 8, 4) . '-' . substr($timeHex, 12, 4);
 	}
 
-	protected static function _makeClockSeq()
-	{
+	protected static function _makeClockSeq() {
 		$clockSeq = 0;
 		$clockSeq |= 0x8000; // variant (2 bits)
 		$clockSeq |= mt_rand(0, (1 << 14) - 1); // clock sequence (14 bits)
@@ -104,8 +97,7 @@ class TimeUUID {
 		return dechex($clockSeq);
 	}
 
-	public static function getTimeUUID($sec = null, $msec = 0)
-	{
+	public static function getTimeUUID($sec = null, $msec = null) {
 		if (self::$_clockSeq === null) {
 			$shmId = shm_attach(self::$_shmKey);
 			self::$_clockSeq = shm_get_var($shmId, self::$_clockSeqKey);
@@ -116,7 +108,8 @@ class TimeUUID {
 
 				if (shm_has_var($shmId, self::$_clockSeqKey)) {
 					self::$_clockSeq = shm_get_var($shmId, self::$_clockSeqKey);
-				} else {
+				}
+				else {
 					self::$_clockSeq = self::_makeClockSeq();
 					shm_put_var($shmId, self::$_clockSeqKey, self::$_clockSeq);
 				}
