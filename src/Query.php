@@ -21,6 +21,18 @@ class Query{
 	 * @var array
 	 */
 	protected $_segments = [];
+	
+	/**
+	 * 
+	 * @var int
+	 */
+	protected $_consistency;
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_options = [];
 
 	/**
 	 * Class constructor
@@ -56,6 +68,26 @@ class Query{
 	
 	/**
 	 * 
+	 * @param int $consistency
+	 */
+	public function setConsistency($consistency){
+		$this->_consistency = $consistency;
+		
+		return $this;
+	}
+	
+	/**
+	 * 
+	 * @param array $options
+	 */
+	public function setOptions(array $options){
+		$this->_options = $options + $this->_options;
+		
+		return $this;
+	}
+	
+	/**
+	 * 
 	 * @param \Cassandra\Connection $adapter
 	 * @return self
 	 */
@@ -66,28 +98,25 @@ class Query{
 
 
 	/**
-	 * Executes the current select object and returns the response
+	 * Executes the current query and returns the response
 	 *
-	 * @param  int  $consistency
-	 * @param  array  $options
 	 * @return \Cassandra\Response
 	 */
-	public function querySync($consistency = null, array $options = []){
+	public function querySync(){
 		$adapter = $this->_dbAdapter ?: Table::getDefaultDbAdapter();
 		
-		return $adapter->querySync($this->assemble(), $this->_bind, $consistency, $options);
+		return $adapter->querySync($this->assemble(), $this->_bind, $this->_consistency, $this->_options);
 	}
 	
 	/**
+	 * Executes the current query and returns the statement
 	 * 
-	 * @param int $consistency
-	 * @param array $options
 	 * @return \Cassandra\Statement
 	 */
-	public function queryAsync($consistency = null, array $options = []){
+	public function queryAsync(){
 		$adapter = $this->_dbAdapter ?: Table::getDefaultDbAdapter();
 	
-		return $adapter->queryAsync($this->assemble(), $this->_bind, $consistency, $options);
+		return $adapter->queryAsync($this->assemble(), $this->_bind, $this->_consistency, $this->_options);
 	}
 	
 	

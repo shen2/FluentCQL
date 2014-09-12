@@ -55,6 +55,10 @@ class Friendship extends \FluentCQL\Table{
 			'to_id'		=>	Type\Base::BIGINT,
 			'updated_uuid'=>Type\Base::TIMEUUID,
 	);
+	
+	protected static $_readConsistency = 0x0001;
+	
+	protected static $_writeConsistency = 0x0002;
 }
 ```
 
@@ -71,6 +75,11 @@ Friendship::insert();
 Friendship::update();
 Friendship::delete();
 ```
+
+### Custom Consistency and Options
+$query = new FluentCQL\Query();
+$query->setConsistency(0x0001)	// Fluent Interface
+	->setOptions(['page_size' => 20]);
 
 ### ActiveObject-like Usage
 ```php

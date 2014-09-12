@@ -37,6 +37,18 @@ abstract class Table extends \ArrayObject
 	
 	/**
 	 * 
+	 * @var int
+	 */
+	protected static $_writeConsistency;
+	
+	/**
+	 * 
+	 * @var int
+	 */
+	protected static $_readConsistency;
+	
+	/**
+	 * 
 	 * @param \Cassandra\Connection $adapter
 	 */
 	public static function setDefaultDbAdapter(\Cassandra\Connection $adapter){
@@ -94,6 +106,7 @@ abstract class Table extends \ArrayObject
 		$response = $query->where(implode(' AND ', $conditions))
 			->bind($bind)
 			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_readConsistency)
 			->querySync()
 			->setRowClass(get_called_class());
 		
@@ -107,7 +120,8 @@ abstract class Table extends \ArrayObject
 	public static function select($cols = null){
 		return Query::select($cols ?: '*')
 			->from(static::$_name)
-			->setDbAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_readConsistency);
 	}
 	
 	/**
@@ -123,14 +137,16 @@ abstract class Table extends \ArrayObject
 			->clause('(' . \implode(', ', \array_keys($data)) . ')')
 			->values('(' . \implode(', ', \array_fill(0, count($data), '?')) . ')')
 			->bind($bind)
-			->setDbAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
 		
 		return $query;
 	}
 	
 	public static function insert(){
 		return Query::insertInto(static::$_name)
-			->setDbAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
 	}
 	
 	/**
@@ -139,7 +155,8 @@ abstract class Table extends \ArrayObject
 	 */
 	public static function update($data, $where){
 		return Query::update(static::$_name)
-			->setDbAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
 	}
 	
 	/**
@@ -149,7 +166,8 @@ abstract class Table extends \ArrayObject
 	public static function delete(){
 		return Query::delete()
 			->from(static::$_name)
-			->setDbAdapter(static::$_dbAdapter);
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
 	}
 	
 	/**
@@ -250,7 +268,9 @@ abstract class Table extends \ArrayObject
 				->bind($bind);
 		}
 		
-		static::$_dbAdapter->querySync($query->assemble(), $query->getBind());
+		$query->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency)
+			->querySync();
 		
 		return $this;
 	}
@@ -272,8 +292,10 @@ abstract class Table extends \ArrayObject
 		}
 		
 		$query->where(implode(' AND ', $conditions))
-			->bind($bind);
+			->bind($bind)
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
 		
-		return static::$_dbAdapter->querySync($query->assemble(), $query->getBind());
+		return $query->querySync();
 	}
 }
