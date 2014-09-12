@@ -4,7 +4,7 @@ FluentCQL
 ## Dependency
 
 - PHP 5.4+
-- [**duoshuo/php-cassandra**](https://github.com/duoshuo/php-cassandra)
+- [duoshuo/php-cassandra](https://github.com/duoshuo/php-cassandra) (Required)
 - [duoshuo/uuid](https://github.com/duoshuo/uuid) (Optional)
 
 ## Initialize
@@ -79,10 +79,4 @@ $post['from_id'] = 123;
 $post['to_id'] = 321;
 $post['updated_uuid'] = new Cassandra\Type\TimeUUID('2dc65ebe-300b-11e4-a23b-ab416c39d509');
 $post->save();
-```
-
-### FluentCQL\TimeUUID
-```php
-$uuidString = FluentCQL\TimeUUID::getTimeUUID('127.0.0.1', time());
-// '037ed880-34bf-11e4-8b5c-f528764d624d'
 ```
