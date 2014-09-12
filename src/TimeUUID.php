@@ -115,9 +115,10 @@ class TimeUUID {
 
 		$nanosSince = isset($sec) ? self::_getTimeBefore($sec, $msec) : self::_getTimeNow();
 
-		return str_pad(dechex(0x00000000ffffffff & $nanosSince), 8, '0', STR_PAD_LEFT) . '-' . 
-			str_pad(dechex((0x0000ffff00000000 & $nanosSince) >> 32), 4, '0', STR_PAD_LEFT) . '-' . 
-			dechex((0xffff000000000000 & $nanosSince) >> 48 & 0x000000000000ffff | 0x0000000000001000) . '-' . 
-			self::$_clockSeq . '-' . self::$_mac;
+		return str_pad(dechex(0xffffffff & $nanosSince), 8, '0', STR_PAD_LEFT) 
+			. '-' . str_pad(dechex($nanosSince >> 32 & 0xffff), 4, '0', STR_PAD_LEFT) 
+			. '-' . dechex($nanosSince >> 48 & 0xffff | 0x1000) 
+			. '-' . self::$_clockSeq 
+			. '-' . self::$_mac;
 	}
 }
