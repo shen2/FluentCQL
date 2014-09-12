@@ -49,15 +49,6 @@ class TimeUUID {
 		self::$_shmKey = $shmKey;
 	}
 
-	protected static function _unsignedRightShift($number, $amount) {
-		if ($number >= 0)
-			return $number >> $amount;
-		$number >>= $amount;
-		if ($amount == 1)
-			return $number & 0x7fffffffffffffff;
-		return $number & ((1 << (64 - $amount)) - 1);
-	}
-
 	protected static function _getTimeBefore($sec, $msec = null) {
 		$nanos = (int)$sec * 10000000 + (isset($msec) ? (int)($msec * 10000000) : mt_rand(0, 10000000 - 1));
 		return $nanos - self::START_EPOCH;
@@ -96,25 +87,6 @@ class TimeUUID {
 	 * @param double $msec
 	 * @return string
 	 */
-	protected static function _createTimeHex($sec = null, $msec = null) {
-		$nanosSince = isset($sec) ? self::_getTimeBefore($sec, $msec) : self::_getTimeNow();
-
-		$msb = 0;
-		$msb |= (0x00000000ffffffff & $nanosSince) << 32;
-		$msb |= self::_unsignedRightShift(0x0000ffff00000000 & $nanosSince, 16);
-		$msb |= self::_unsignedRightShift(0xffff000000000000 & $nanosSince, 48);
-		$msb |= 0x0000000000001000; // sets the version to 1.
-
-		$timeHex = str_pad(dechex($msb), 16, '0', STR_PAD_LEFT);
-		return substr($timeHex, 0, 8) . '-' . substr($timeHex, 8, 4) . '-' . substr($timeHex, 12, 4);
-	}
-
-	/**
-	 * 
-	 * @param int $sec
-	 * @param double $msec
-	 * @return string
-	 */
 	public static function getTimeUUID($sec = null, $msec = null) {
 		if (self::$_clockSeq === null) {
 			$shmId = shm_attach(self::$_shmKey);
@@ -140,6 +112,12 @@ class TimeUUID {
 
 			shm_detach($shmId);
 		}
-		return self::_createTimeHex($sec, $msec) . '-' . self::$_clockSeq . '-' . self::$_mac;
+
+		$nanosSince = isset($sec) ? self::_getTimeBefore($sec, $msec) : self::_getTimeNow();
+
+		return str_pad(dechex(0x00000000ffffffff & $nanosSince), 8, '0', STR_PAD_LEFT) . '-' . 
+			str_pad(dechex((0x0000ffff00000000 & $nanosSince) >> 32), 4, '0', STR_PAD_LEFT) . '-' . 
+			dechex((0xffff000000000000 & $nanosSince) >> 48 & 0x000000000000ffff | 0x0000000000001000) . '-' . 
+			self::$_clockSeq . '-' . self::$_mac;
 	}
 }
