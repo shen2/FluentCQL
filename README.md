@@ -3,7 +3,9 @@ FluentCQL
 
 ## Dependency
 
-- **duoshuo/php-cassandra**
+- PHP 5.4+
+- [**duoshuo/php-cassandra**](https://github.com/duoshuo/php-cassandra)
+- [duoshuo/uuid](https://github.com/duoshuo/uuid) (Optional)
 
 ## Initialize
 
