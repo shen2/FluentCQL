@@ -69,6 +69,7 @@ class Query{
 	/**
 	 * 
 	 * @param int $consistency
+	 * @return self
 	 */
 	public function setConsistency($consistency){
 		$this->_consistency = $consistency;
@@ -79,6 +80,7 @@ class Query{
 	/**
 	 * 
 	 * @param array $options
+	 * @return self
 	 */
 	public function setOptions(array $options){
 		$this->_options = $options + $this->_options;
@@ -173,9 +175,9 @@ class Query{
 	 * @param array $arguments
 	 * @return self
 	 */
-	public static function __callStatic($name, array $arguments){
+	public static function __callStatic($name, array $args = []){
 		$command = \strtoupper(\implode(' ', preg_split('/([[:upper:]][[:lower:]]+)/', $name, null, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY)));
-		return (new self())->_appendClause($command, $arguments);
+		return (new self())->_appendClause($command, $args);
 	}
 	
 	public static function alter(){

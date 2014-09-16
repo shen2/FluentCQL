@@ -62,30 +62,68 @@ class Friendship extends \FluentCQL\Table{
 }
 ```
 
-### Queries 
+### Queries
+* Table::find() 
 ```php
-$response = Friendship::find(321,123);		// synchronously query and get binary response 
+$response = Friendship::find(321, 123);		// synchronously query and get binary response 
 $response->fetchAll();		// get all rows in a SplFixedArray
 $response->fetchRow();		// get first row in a ArrayObject from response
 ```
 
+* Table::select()
 ```php
-Friendship::select();
-Friendship::insert();
-Friendship::update();
-Friendship::delete();
+// this way totally equal to Friendship::find()
+$response = Friendship::select()
+	->where('from_id = ? AND to_id = ?', 321, 123)
+	->querySync();
+```
+
+* Table::insert()
+```php
+$response = Friendship::insert()
+    ->clause('(from_id, to_id, updated_uuid)')
+    ->values('(?, ?, ?)', 321, 123, new \Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509'))
+    ->querySync();
+```
+
+* Table::update()
+```php
+$response = Friendship::update()
+	->set('update_uuid = ?', new \Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509'))
+    ->where('from_id = ? AND to_id = ?', 321, 123)
+    ->querySync();
+```
+
+* Table::delete()
+```php
+$response = Friendship::delete()
+    ->where('from_id = ? AND to_id = ?', 321, 123)
+    ->if('updated_uuid = ?', new \Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509'))
+    ->querySync();
+```
+
+* Table::insertRow()
+```php
+// Insert a row through an array.
+$response = Friendship::insertRow([
+    'from_id' => 123,
+    'to_id'   => 321,
+    'updated_uuid'=> '2dc65ebe-300b-11e4-a23b-ab416c39d509',
+])->querySync();
 ```
 
 ### Custom Consistency and Options
+```php
 $query = new FluentCQL\Query();
-$query->setConsistency(0x0001)	// Fluent Interface
+$query->setConsistency(0x0001)
 	->setOptions(['page_size' => 20]);
+```
 
 ### ActiveObject-like Usage
 ```php
 $post = new Friendship(); 
 $post['from_id'] = 123;
 $post['to_id'] = 321;
-$post['updated_uuid'] = new Cassandra\Type\TimeUUID('2dc65ebe-300b-11e4-a23b-ab416c39d509');
+$post['updated_uuid'] = '2dc65ebe-300b-11e4-a23b-ab416c39d509';
 $post->save();
 ```
