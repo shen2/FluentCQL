@@ -131,7 +131,7 @@ abstract class Table extends \ArrayObject
 	public static function insertRow($data){
 		$bind = [];
 		foreach($data as $key => $value)
-			$bind[] = $value === null ? null : Type\Base::getTypeObject(static::$_columns[$key], $value);
+			$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $value);
 		
 		$query = Query::insertInto(static::$_name)
 			->clause('(' . \implode(', ', \array_keys($data)) . ')')
