@@ -115,8 +115,13 @@ $response = Friendship::insertRow([
 * Table::updateRow($primary, $data)
 ```php
 // Update a row by primary key.
-$response = Friendship::updateRow([123, 321], ['updated_uuid'=> '2dc65ebe-300b-11e4-a23b-ab416c39d509'])
-	->querySync();
+$response = Friendship::updateRow([123, 321], ['updated_uuid'=> '2dc65ebe-300b-11e4-a23b-ab416c39d509'])->querySync();
+```
+
+* Table::deleteRow($primary)
+```php
+// Delete a row or rows by primary key.
+$response = Friendship::deleteRow([123])->querySync();
 ```
 
 ### Custom Consistency and Options

@@ -124,6 +124,33 @@ abstract class Table extends \ArrayObject
 			->setConsistency(static::$_readConsistency);
 	}
 	
+	public static function insert(){
+		return Query::insertInto(static::$_name)
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
+	}
+	
+	/**
+	 * 
+	 * @return Query
+	 */
+	public static function update($data, $where){
+		return Query::update(static::$_name)
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
+	}
+	
+	/**
+	 * 
+	 * @return Query
+	 */
+	public static function delete(){
+		return Query::delete()
+			->from(static::$_name)
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
+	}
+	
 	/**
 	 * 
 	 * @return Query
@@ -173,31 +200,29 @@ abstract class Table extends \ArrayObject
 		return $query;
 	}
 	
-	public static function insert(){
-		return Query::insertInto(static::$_name)
-			->setDbAdapter(static::$_dbAdapter)
-			->setConsistency(static::$_writeConsistency);
-	}
-	
 	/**
 	 * 
+	 * @param array $primary
 	 * @return Query
 	 */
-	public static function update($data, $where){
-		return Query::update(static::$_name)
-			->setDbAdapter(static::$_dbAdapter)
-			->setConsistency(static::$_writeConsistency);
-	}
-	
-	/**
-	 * 
-	 * @return Query
-	 */
-	public static function delete(){
-		return Query::delete()
+	public static function deleteRow($primary){
+		$conditions = [];
+		$bind = [];
+		
+		foreach((array)$primary as $index => $value){
+			$columnName = static::$_primary[$index];
+			$conditions[] = $columnName . ' = ?';
+			$bind[] = Type\Base::getTypeObject(static::$_columns[$columnName], $value);
+		}
+		
+		$query = Query::delete()
 			->from(static::$_name)
+			->where(implode(' AND ', $conditions))
+			->bind($bind)
 			->setDbAdapter(static::$_dbAdapter)
 			->setConsistency(static::$_writeConsistency);
+		
+		return $query;
 	}
 	
 	/**
