@@ -102,7 +102,7 @@ $response = Friendship::delete()
     ->querySync();
 ```
 
-* Table::insertRow()
+* Table::insertRow($data)
 ```php
 // Insert a row through an array.
 $response = Friendship::insertRow([
@@ -110,6 +110,13 @@ $response = Friendship::insertRow([
     'to_id'   => 321,
     'updated_uuid'=> '2dc65ebe-300b-11e4-a23b-ab416c39d509',
 ])->querySync();
+```
+
+* Table::updateRow($primary, $data)
+```php
+// Update a row by primary key.
+$response = Friendship::updateRow([123, 321], ['updated_uuid'=> '2dc65ebe-300b-11e4-a23b-ab416c39d509'])
+	->querySync();
 ```
 
 ### Custom Consistency and Options

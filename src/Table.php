@@ -128,7 +128,7 @@ abstract class Table extends \ArrayObject
 	 * 
 	 * @return Query
 	 */
-	public static function insertRow($data){
+	public static function insertRow(array $data){
 		$bind = [];
 		foreach($data as $key => $value)
 			$bind[] = Type\Base::getTypeObject(static::$_columns[$key], $value);
@@ -136,6 +136,36 @@ abstract class Table extends \ArrayObject
 		$query = Query::insertInto(static::$_name)
 			->clause('(' . \implode(', ', \array_keys($data)) . ')')
 			->values('(' . \implode(', ', \array_fill(0, count($data), '?')) . ')')
+			->bind($bind)
+			->setDbAdapter(static::$_dbAdapter)
+			->setConsistency(static::$_writeConsistency);
+		
+		return $query;
+	}
+	
+	/**
+	 *
+	 * @param array $primary
+	 * @param array $data
+	 * @return Query
+	 */
+	public static function updateRow($primary, array $data){
+		$assignments = [];
+		foreach($data as $columnName => $value){
+			$assignments[] = $columnName . ' = ?';
+			$bind[] = Type\Base::getTypeObject(static::$_columns[$columnName], $value);
+		}
+		
+		$conditions = [];
+		foreach((array)$primary as $index => $value){
+			$columnName = static::$_primary[$index];
+			$conditions[] = $columnName . ' = ?';
+			$bind[] = Type\Base::getTypeObject(static::$_columns[$columnName], $value);
+		}
+		
+		$query = Query::update(static::$_name)
+			->set(implode(', ', $assignments))
+			->where(implode(' AND ', $conditions))
 			->bind($bind)
 			->setDbAdapter(static::$_dbAdapter)
 			->setConsistency(static::$_writeConsistency);
