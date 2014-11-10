@@ -134,7 +134,7 @@ abstract class Table extends \ArrayObject
 	 * 
 	 * @return Query
 	 */
-	public static function update($data, $where){
+	public static function update(){
 		return Query::update(static::$_name)
 			->setDbAdapter(static::$_dbAdapter)
 			->setConsistency(static::$_writeConsistency);
