@@ -102,6 +102,7 @@ class Query{
 	/**
 	 * Executes the current query and returns the response
 	 *
+	 * @throws \Cassandra\Response\Exception
 	 * @return \Cassandra\Response
 	 */
 	public function querySync(){
@@ -120,7 +121,18 @@ class Query{
 	
 		return $adapter->queryAsync($this->assemble(), $this->_bind, $this->_consistency, $this->_options);
 	}
+
+	/**
+	 * Prepares the current query and returns the response
+	 *
+	 * @throws \Cassandra\Response\Exception
+	 * @return \Cassandra\Result
+	 */
+	public function prepare(){
+		$adapter = $this->_dbAdapter ?: Table::getDefaultDbAdapter();
 	
+		return $adapter->prepare($this->assemble());
+	}
 	
 	/**
 	 * Converts this object to an CQL string.
@@ -138,13 +150,7 @@ class Query{
 	 */
 	public function __toString()
 	{
-		try {
-			$cql = $this->assemble();
-		} catch (Exception $e) {
-			trigger_error($e->getMessage(), E_USER_WARNING);
-			$cql = '';
-		}
-		return (string)$cql;
+		return $this->assemble();
 	}
 	
 	/**
