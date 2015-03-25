@@ -1,6 +1,12 @@
 {
 	"name": "shen2/fluent-cql",
 	"description": "an php CQL building library",
+	"keywords":[
+		"cassandra",
+		"nosql",
+		"cql",
+		"ORM"
+	],
 	"minimum-stability": "stable",
 	"license": "MIT",
 	"authors": [

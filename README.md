@@ -19,11 +19,21 @@ FluentCQL\Table::setDefaultDbAdapter($connection);
 - SELECT COMMAND
 ```php
 $query = FluentCQL\Query::select('count(*)')
-	->from'table_name')
+    ->from('table_name')
     ->where('id = ?', 123);
 
-// SELECT count(*) FROM table_name where id = 123
+$query->assemble(); // SELECT count(*) FROM table_name where id = 123
 
+$query->setDbAdapter($dbAdapter)->querySync(); // Call querySync() on $dbAdapter
+```
+
+- INSERT COMMAND
+```php
+$query = FluentCQL\Query::insertInto('table_name')
+    ->clause('(from_id, to_id, updated_uuid)')
+    ->values('(?, ?, ?)', 321, 123, new \Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509'));
+
+// INSERT INTO table_name (from_id, to_id, updated_uuid) values (321, 123, 2dc65ebe-300b-11e4-a23b-ab416c39d509);
 ```
 
 - UPDATE COMMAND
@@ -34,9 +44,16 @@ $query = FluentCQL\Query::update('table_name')
     ->and('d = :d', $d)
     ->ifExists();
 
-$query->assemble(); // 'UPDATE table_name SET a = :a, b = :b WHERE c = :c AND d = :d'
+// 'UPDATE table_name SET a = :a, b = :b WHERE c = :c AND d = :d'
+```
 
-$query->querySync(); // Call querySync() on $dbAdapter
+- DELETE COMMAND
+```php
+$query = FluentCQL\Query::delete()
+    ->from('table_name')
+    ->where('id = ?', 123);
+
+// DELETE FROM table_name where id = 123
 ```
 
 
