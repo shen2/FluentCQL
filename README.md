@@ -16,7 +16,7 @@ FluentCQL\Table::setDefaultDbAdapter($connection);
 
 ## FluentCQL\Query
 
-- INSERT COMMAND
+- SELECT COMMAND
 ```php
 $query = FluentCQL\Query::select('count(*)')
 	->from'table_name')
@@ -131,7 +131,7 @@ $query->setConsistency(0x0001)
 	->setOptions(['page_size' => 20]);
 ```
 
-### ActiveObject-like Usage
+### ActiveRecord-like Usage
 ```php
 $post = new Friendship(); 
 $post['from_id'] = 123;
