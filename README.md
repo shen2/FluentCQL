@@ -11,7 +11,6 @@ FluentCQL
 
 ```php
 $connection = new Cassandra\Connection(['127.0.0.1'], 'my_keyspace');
-FluentCQL\Table::setDefaultDbAdapter($connection);
 ```
 
 ## FluentCQL\Query
@@ -23,8 +22,7 @@ $query = FluentCQL\Query::select('count(*)')
     ->where('id = ?', 123);
 
 $query->assemble(); // SELECT count(*) FROM table_name where id = 123
-
-$query->setDbAdapter($dbAdapter)->querySync(); // Call querySync() on $dbAdapter
+$query->setDbAdapter($connection)->querySync(); // execute query syncronously
 ```
 
 - INSERT COMMAND
@@ -33,18 +31,22 @@ $query = FluentCQL\Query::insertInto('table_name')
     ->clause('(from_id, to_id, updated_uuid)')
     ->values('(?, ?, ?)', 321, 123, new \Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509'));
 
-// INSERT INTO table_name (from_id, to_id, updated_uuid) values (321, 123, 2dc65ebe-300b-11e4-a23b-ab416c39d509);
+$query->assemble(); // INSERT INTO table_name (from_id, to_id, updated_uuid) values (321, 123, 2dc65ebe-300b-11e4-a23b-ab416c39d509);
+$query->setDbAdapter($connection)->querySync(); // execute query syncronously
+
 ```
 
 - UPDATE COMMAND
 ```php
+
 $query = FluentCQL\Query::update('table_name')
     ->set('a = :a, b = :b', $a, $b)
     ->where('c = :c', $c)
     ->and('d = :d', $d)
     ->ifExists();
 
-// 'UPDATE table_name SET a = :a, b = :b WHERE c = :c AND d = :d'
+$query->assemble(); // 'UPDATE table_name SET a = :a, b = :b WHERE c = :c AND d = :d'
+$query->setDbAdapter($connection)->querySync(); // execute query syncronously
 ```
 
 - DELETE COMMAND
@@ -53,9 +55,9 @@ $query = FluentCQL\Query::delete()
     ->from('table_name')
     ->where('id = ?', 123);
 
-// DELETE FROM table_name where id = 123
+$query->assemble(); // DELETE FROM table_name where id = 123
+$query->setDbAdapter($connection)->querySync(); // execute query syncronously
 ```
-
 
 ## FluentCQL\Table
 
@@ -63,36 +65,43 @@ $query = FluentCQL\Query::delete()
 ```php
 class Friendship extends \FluentCQL\Table{
 
-	protected static $_name = 'friendship';
+    protected static $_name = 'friendship';
 
-	protected static $_primary = array('from_id', 'to_id');
+    protected static $_primary = array('from_id', 'to_id');
 
-	protected static $_columns = array(
-			'from_id'	=>	Type\Base::BIGINT,
-			'to_id'		=>	Type\Base::BIGINT,
-			'updated_uuid'=>Type\Base::TIMEUUID,
-	);
-	
-	protected static $_readConsistency = 0x0001;
-	
-	protected static $_writeConsistency = 0x0002;
+    protected static $_columns = array(
+            'from_id'      => Type\Base::BIGINT,
+            'to_id'        => Type\Base::BIGINT,
+            'updated_uuid' => Type\Base::TIMEUUID,
+    );
+
+    protected static $_readConsistency = 0x0001;
+
+    protected static $_writeConsistency = 0x0002;
 }
 ```
+### Initialize
+
+```php
+$connection = new Cassandra\Connection(['127.0.0.1'], 'my_keyspace');
+FluentCQL\Table::setDefaultDbAdapter($connection);
+```
+
 
 ### Queries
 * Table::find() 
 ```php
-$response = Friendship::find(321, 123);		// synchronously query and get binary response 
-$response->fetchAll();		// get all rows in a SplFixedArray
-$response->fetchRow();		// get first row in a ArrayObject from response
+$response = Friendship::find(321, 123);     // synchronously query and get binary response 
+$response->fetchAll(); // get all rows in a SplFixedArray
+$response->fetchRow(); // get first row in a ArrayObject from response
 ```
 
 * Table::select()
 ```php
 // this way totally equal to Friendship::find()
 $response = Friendship::select()
-	->where('from_id = ? AND to_id = ?', 321, 123)
-	->querySync();
+    ->where('from_id = ? AND to_id = ?', 321, 123)
+    ->querySync();
 ```
 
 * Table::insert()
@@ -106,7 +115,7 @@ $response = Friendship::insert()
 * Table::update()
 ```php
 $response = Friendship::update()
-	->set('update_uuid = ?', new \Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509'))
+    ->set('update_uuid = ?', new \Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509'))
     ->where('from_id = ? AND to_id = ?', 321, 123)
     ->querySync();
 ```
@@ -145,14 +154,14 @@ $response = Friendship::deleteRow([123])->querySync();
 ```php
 $query = new FluentCQL\Query();
 $query->setConsistency(0x0001)
-	->setOptions(['page_size' => 20]);
+    ->setOptions(['page_size' => 20]);
 ```
 
 ### ActiveRecord-like Usage
 ```php
 $post = new Friendship(); 
-$post['from_id'] = 123;
-$post['to_id'] = 321;
+$post['from_id']      = 123;
+$post['to_id']        = 321;
 $post['updated_uuid'] = '2dc65ebe-300b-11e4-a23b-ab416c39d509';
 $post->save();
 ```
