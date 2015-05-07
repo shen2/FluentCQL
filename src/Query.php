@@ -168,8 +168,14 @@ class Query{
 		if (!empty($args)){
 			$this->_segments[] = array_shift($args);
 			
-			foreach($args as $arg)
-				$this->_bind[] = $arg;
+			foreach($args as $arg){
+				if (is_array($arg)){
+					foreach($arg as $subArg)
+						$this->_bind[] = $subArg;
+				} else {
+					$this->_bind[] = $arg;
+				}
+			}
 		}
 		
 		return $this;
