@@ -364,4 +364,35 @@ abstract class Table extends \ArrayObject
         
         return $query->querySync();
     }
+    
+    public static function getKeyspace()
+    {
+        return static::$_keyspace;
+    }
+
+    public static function getColumns()
+    {
+        return static::$_columns;
+    }
+
+    public static function getTableName()
+    {
+        return static::$_name;
+    }
+
+    public static function getPrimary()
+    {
+        return static::$_primary;
+    }
+
+    public static function getReadConsistency()
+    {
+        return static::$_readConsistency;
+    }
+
+    public static function getWriteConsistency()
+    {
+        return static::$_writeConsistency;
+    }
+    
 }
